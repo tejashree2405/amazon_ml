@@ -1,0 +1,28 @@
+# Dataset
+student_resource/dataset/
+*.csv
+*.tsv
+*.parquet
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Models
+*.cbm
+*.pkl
+*.joblib
+
+# Outputs
+outputs/
+results/
+logs/
+
+# OS
+.DS_Store
