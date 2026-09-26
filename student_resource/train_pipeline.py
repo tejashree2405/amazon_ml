@@ -4,6 +4,10 @@ import pandas as pd
 import logging
 import numpy as np
 
+# Configurable paths (defaults for Colab)
+DATASET_ROOT = os.getenv('DATASET_ROOT', r'C:/Users/tejas/OneDrive/Desktop/mlamazon/student_resource/dataset')
+OUTPUT_ROOT = os.getenv('OUTPUT_ROOT', r'C:/Users/tejas/OneDrive/Desktop/mlamazon/student_resource/output')
+
 from normalization import preprocess_dataframe
 from blocking import run_blocker
 from pair_features import compute_pair_features
@@ -50,7 +54,7 @@ def build_features(pairs_long, s1_df, ref_df):
 def main():
     root_dir = os.path.dirname(os.path.abspath(__file__))
 
-    dataset_root = "/content/drive/MyDrive/student_resource/dataset"
+    dataset_root = DATASET_ROOT
 
     splits_dir = os.path.join(dataset_root, "splits")
     dataset_dir = os.path.join(dataset_root, "train")
@@ -136,6 +140,32 @@ def main():
             best_t = t
             
     logging.info(f"Pipeline Complete! Best Calibrated Threshold: {best_t:.2f} -> Validation F0.5: {best_f05:.4f}")
+    # ---------------------------------------------------------
+    # Validation output generation
+    # ---------------------------------------------------------
+    val_out_dir = os.path.join(OUTPUT_ROOT, "validation")
+    os.makedirs(val_out_dir, exist_ok=True)
+    # Save candidate pairs (raw blocker output)
+    val_cands_path = os.path.join(val_out_dir, "candidate_pairs.tsv")
+    val_cands_raw.to_csv(val_cands_path, sep="\t", index=False)
+    # Generate matching results
+    pred_dict_val = generate_predictions(val_df[['source1_entity_id','candidate_entity_id','probability']], best_t)
+    for s1 in val_s1['entity_id']:
+        pred_dict_val.setdefault(s1, set())
+    match_path = os.path.join(val_out_dir, "matching_results.tsv")
+    rows = []
+    for s1 in val_s1['entity_id']:
+        matches = sorted(pred_dict_val.get(s1, []))
+        rows.append({"source1_entity_id": s1, "matched_entity_ids": ",".join(matches) if matches else ""})
+    pd.DataFrame(rows).to_csv(match_path, sep="\t", index=False)
+    # Validation metrics file
+    metrics_path = os.path.join(val_out_dir, "validation_score.txt")
+    with open(metrics_path, "w") as f:
+        f.write(f"Best threshold: {best_t:.2f}\n")
+        f.write(f"Validation F0.5: {best_f05:.4f}\n")
+        f.write(f"Number of validation Source 1 entities: {len(val_s1)}\n")
+        f.write(f"Number of candidate pairs: {len(val_cands_raw)}\n")
+        f.write(f"Number of predicted matches: {sum(len(v) for v in pred_dict_val.values())}\n")
     
     # 8. Save Artifacts
     artifacts_dir = os.path.join(root_dir, "models")
