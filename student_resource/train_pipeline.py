@@ -49,8 +49,11 @@ def build_features(pairs_long, s1_df, ref_df):
 
 def main():
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    splits_dir = os.path.join(root_dir, "dataset", "splits")
-    dataset_dir = os.path.join(root_dir, "dataset", "train")
+
+    dataset_root = "/content/drive/MyDrive/student_resource/dataset"
+
+    splits_dir = os.path.join(dataset_root, "splits")
+    dataset_dir = os.path.join(dataset_root, "train")
     
     features = [
         'feat_name_ratio', 'feat_core_ratio', 'feat_name_sort_ratio',
